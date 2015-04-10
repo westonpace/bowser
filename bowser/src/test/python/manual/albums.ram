@@ -1,0 +1,23 @@
+<ram>
+
+  <container navigation_theme="vertical">
+    <title>
+      <p>Albums</p>
+    </title>
+    <container navigation_theme="horizontal">
+      <title>
+        <p>Hits of the caveman times</p>
+      </title>
+      <p>I love my cave</p>
+      <p>Armpit hair is hot</p>
+    </container>
+    <container navigation_theme="horizontal">
+      <title>
+        <p>The blues</p>
+      </title>
+      <p>I'm feeling cyan</p>
+      <p>What's that color?</p>
+    </container>
+  </container>
+
+</ram>
