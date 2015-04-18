@@ -4,6 +4,10 @@ Created on Mar 25, 2015
 @author: Pace
 '''
 from bowser.systems.event import Event
+from bowser import Attributes
+import logging
+
+FOCUSABLE_ATTR_NAME = "focusable"
 
 class FocusRequestEvent(Event):
     '''
@@ -39,17 +43,21 @@ class FocusEvent(Event):
 class FocusSystem(object):
     
     def __init__(self, focus_tree_root):
+        self.logger = logging.getLogger(__name__)
         self.currently_focused = None
         focus_tree_root.add_event_listener(FocusRequestEvent.name, self.__on_focus_requeseted)
         
+    def __is_focusable(self, element):
+        return element.get_bool(Attributes.Focusable, default_value=True)
+        
     def __find_first_focusable_child(self, target):
-        return target.dfs(lambda node: node.focusable)
+        return target.dfs(lambda node: self.__is_focusable(node))
         
     def __find_first_focusable_parent(self, target):
-        return target.find_first_ancestor(lambda node: node.focusable)
+        return target.find_first_ancestor(lambda node: self.__is_focusable(node))
         
     def __find_first_focusable(self, target):
-        if target.focusable:
+        if self.__is_focusable(target):
             return target
         result = self.__find_first_focusable_child(target)
         if result is None:
@@ -57,6 +65,7 @@ class FocusSystem(object):
         return result
         
     def __do_focus_change(self, new_target):
+        self.logger.debug("Changing focus from: %s to: %s", self.currently_focused, new_target)
         if self.currently_focused is not None:
             self.currently_focused.dispatch_event(FocusEvent(FocusEvent.blur_name))
         self.currently_focused = new_target

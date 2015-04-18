@@ -1,17 +1,17 @@
 <ram>
 
-  <container navigation_theme="vertical">
+  <container navigation-theme="vertical">
     <title>
       <p>Albums</p>
     </title>
-    <container navigation_theme="horizontal">
+    <container navigation-theme="horizontal">
       <title>
         <p>Hits of the caveman times</p>
       </title>
       <p>I love my cave</p>
       <p>Armpit hair is hot</p>
     </container>
-    <container navigation_theme="horizontal">
+    <container navigation-theme="horizontal">
       <title>
         <p>The blues</p>
       </title>

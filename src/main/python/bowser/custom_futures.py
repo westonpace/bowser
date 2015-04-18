@@ -2,6 +2,7 @@ from concurrent.futures.thread import ThreadPoolExecutor
 from threading import Condition
 import logging
 
+# pylint: disable=invalid-name
 common_pool = ThreadPoolExecutor(max_workers=1)
 
 class Future(object):
@@ -22,7 +23,6 @@ class Future(object):
     
     def fulfill(self, result=None):
         with self.__lock:
-            print("FULFILL")
             self.__result = result
             self.__do_finish()
         
@@ -33,7 +33,6 @@ class Future(object):
         
     def cancel(self):
         with self.__lock:
-            print("CANCEL")
             self.cancelled = True
             self.__do_finish()
         

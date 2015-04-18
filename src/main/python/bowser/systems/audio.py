@@ -19,9 +19,10 @@ class SoundLibrary(object):
         
     def load(self):
         for filename in os.listdir(self.__folder):
-            name = filename.rpartition('.')[0]
-            full_path = os.path.join(self.__folder, filename)
-            self.__sounds[name] = pygame.mixer.Sound(file=full_path)
+            if filename.endswith(".ogg"):
+                name = filename.rpartition('.')[0]
+                full_path = os.path.join(self.__folder, filename)
+                self.__sounds[name] = pygame.mixer.Sound(file=full_path)
             
     def get_effect(self, name):
         return self.__sounds[name]
@@ -67,7 +68,6 @@ class PygameEffectsChannel(object):
     def __pop_and_finish(self):
         finished = self.__queue.pop(0)
         if finished is not None:
-            print("POP-REAL")
             finished.future.fulfill()
     
     def __get_event_code(self):
@@ -81,10 +81,9 @@ class PygameEffectsChannel(object):
                 #self.__queue[0] could be None if we have two sounds playing and get interrupted.
                 #In this case we will push two None events into the queue to swallow the two pygame callbacks.
                 #When swallowing the first callback self.__queue[0] will be None
+                self.__queued_to_pygame -= 1
                 if len(self.__queue) > 1 and self.__queue[0] is not None:
                     self.__queue_to_pygame(self.__queue[0].effect)
-                else:
-                    self.__queued_to_pygame -= 1
                 
     def __queue_to_pygame(self, effect):
         self.__channel.queue(effect)
@@ -106,7 +105,6 @@ class PygameEffectsChannel(object):
     def queue(self, effect):
         future = Future()
         with self.__lock:
-            print("APPEND")
             self.__queue.append(PygameEffectsChannel.QueuedEffect(effect, future))
             if self.__ready_to_queue_to_pygame():
                 self.__queue_to_pygame(effect)
@@ -150,8 +148,12 @@ class PyttsxChannel(object):
         self.engine.startLoop(useDriverLoop=False)
         self.engine.connect('finished-utterance', self.__on_utterance_finished)
     
-    def __on_utterance_finished(self):
-        self.__futures.pop().fulfill()
+    #pylint: disable=unused-argument
+    def __on_utterance_finished(self, completed, *args, **kwargs):
+        if completed:
+            self.__futures.pop().fulfill()
+        else:
+            self.__futures.pop().cancel()
     
     def interrupt(self):
         '''

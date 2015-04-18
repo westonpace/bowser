@@ -106,12 +106,19 @@ class EventDispatcher(object):
 
     def __init__(self):
         self.__async_executor = ThreadPoolExecutor(max_workers=10)
+        self.logger = logging.getLogger(__name__)
+        self._listeners_map = {}
+        self._capture_listeners_map = {}
 
     def __do_fire_event(self, event, target):
         '''
         Actually fires the event
         '''
-        _EventExecution(event, target).fire()
+        try:
+            _EventExecution(event, target).fire()
+        #pylint: disable=bare-except
+        except:
+            self.logger.exception("Error occurred dispatching event: %s", event)
 
     def fire_event(self, event, target):
         '''
@@ -121,7 +128,9 @@ class EventDispatcher(object):
             self.__do_fire_event(event, target)
         else:
             self.__async_executor.submit(self.__do_fire_event, event, target)
-            
+
+GLOBAL_DISPATCHER = EventDispatcher()
+  
 class _EventExecution(object):
     '''
     Command to execute an individual event
@@ -135,10 +144,10 @@ class _EventExecution(object):
 
     def __calculate_propagation_path(self):
         path = []
-        target = self.__target.parent
+        target = self.__target.getparent()
         while target is not None:
             path.append(target)
-            target = target.parent
+            target = target.getparent()
         return list(reversed(path))
 
     def __fire_on_listeners(self, listeners):
@@ -216,31 +225,29 @@ class EventTarget(object):
         A reference to the event dispatcher that this target will dispatch events on
     '''
 
-    def __init__(self, event_dispatcher=None):
-        self.__capture_listeners = {}
-        self.__listeners = {}
-        self.event_dispatcher = event_dispatcher
-        self.parent = None
-
     @property
     def listeners(self):
         '''
         A read only list of listeners for the non-capture phases
         '''
-        return self.__listeners
+        if self.get_id() not in GLOBAL_DISPATCHER._listeners_map:
+            GLOBAL_DISPATCHER._listeners_map[self.get_id()] = {}
+        return GLOBAL_DISPATCHER._listeners_map[self.get_id()]
 
     @property
     def capture_listeners(self):
         '''
         A read only list of listeners for the capture phase
         '''
-        return self.__capture_listeners
+        if self.get_id() not in GLOBAL_DISPATCHER._capture_listeners_map:
+            GLOBAL_DISPATCHER._capture_listeners_map[self.get_id()] = {}
+        return GLOBAL_DISPATCHER._capture_listeners_map[self.get_id()]
 
     def __get_listeners_map(self, use_capture):
         if use_capture:
-            return self.__capture_listeners
+            return self.capture_listeners
         else:
-            return self.__listeners
+            return self.listeners
 
     def __get_listeners_for_type(self, event_type, use_capture, initialize):
         listeners_map = self.__get_listeners_map(use_capture)
@@ -284,6 +291,5 @@ class EventTarget(object):
         Dispatches an event at this target
         '''
         event.target = self
-        self.event_dispatcher.fire_event(event, self)
+        GLOBAL_DISPATCHER.fire_event(event, self)
         
-

@@ -49,15 +49,14 @@ class LinearNavigationController(object):
     
     def __init__(self, navigable_object, forward_key, backward_key):
         self.__target = navigable_object
-        self.__target.add_event_listener(KeyEvent.name, self.__on_key)
         self.forward_key = forward_key
         self.backward_key = backward_key
         
-    def __on_key(self, event):
+    def on_key(self, event):
         if self.forward_key.matches(event):
-            self.__target.navigate_forwards()
+            self.__target.navigate_forwards(event.current_target)
         elif self.backward_key.matches(event):
-            self.__target.navigate_backwards()
+            self.__target.navigate_backwards(event.current_target)
 
 class NavigationTheme(object):
     

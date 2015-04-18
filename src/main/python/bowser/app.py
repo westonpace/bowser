@@ -8,15 +8,16 @@ import time
 import logging
 
 from bowser.timer import Timer
-from bowser.rom import Window, Container, RamDocument, Paragraph, RomElement
 from bowser.systems.resource import ResourceLoader
-from bowser.xmlparse import XmlParser
 from bowser.systems.focus import FocusSystem
 from bowser.systems.key_and_frame import KeyAndFrameEngine
 from bowser.systems.audio import AudioSystem, SoundLibrary
 from bowser.systems.renderer import RenderingSystem
 from bowser.systems.event import EventDispatcher
 from bowser.systems.http import HttpService
+from bowser import xmlparse, rom
+from bowser.rom import RomElement, Window
+from bowser.xmlparse import XmlParser
 
 class BowserLoopTask(object):
     
@@ -62,11 +63,10 @@ class Bowser(object):
         self.logger.info("Initializing bowser")
         self.loop_task = BowserLoopTask()
         self.app_thread = Timer(self.loop_task.iterate, 1/30, self.loop_task.initialize)
-        self.event_dispatcher = EventDispatcher()
-        self.window = Window(self.event_dispatcher)
-        self.parser = XmlParser([Container, RamDocument, Paragraph], RomElement, self.event_dispatcher)
+        self.window = Window()
+        self.xml_parser = XmlParser(rom.create_processors_list(), RomElement)
         self.http_service = HttpService()
-        self.resource_loader = ResourceLoader(self.window, self.parser, self.http_service)
+        self.resource_loader = ResourceLoader(self.window, self.xml_parser, self.http_service)
         self.focus_system = FocusSystem(self.window)
         self.key_and_frame = KeyAndFrameEngine(self.focus_system, self.window)
         self.audio_system = AudioSystem(self.window)
